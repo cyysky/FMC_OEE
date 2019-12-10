@@ -1,22 +1,20 @@
 #include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library (you most likely already have this in your sketch)
 #include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
 #include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
-#include <WiFiClient.h>
+
 #include <WiFiManager.h>
+#include <WiFiClient.h>
+#include <ESP8266HTTPClient.h>
 
 #include <EEPROM.h>
 
-#include "index.h" //Our HTML webpage contents
-
-int addr = 0;
-
 //Web server
-//WiFiServer server(8888); //Initialize the server on Port 80
-ESP8266WebServer server2(88);
+ESP8266WebServer server2(888);
 
 // GPIO Pin
-int LED_PIN = 14; 
+int LED_PIN = 14;
 int INPUT_PIN = 16;
+int WIFI_PIN = 15;
 
 // Input Status and debouncing
 int inputValue = 0;
@@ -28,42 +26,31 @@ int lastInputState = LOW;   // the previous reading from the input pin
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
+String strText ;
 
 // HTML web page to handle 3 input fields (input1, input2, input3)
-const char index_html[] PROGMEM = R"=====(
-<!DOCTYPE HTML><html><head>
-  <title>ESP Input Form</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  </head><body>
-  <form action="/get">
-    input1: <input type="text" name="counter">
-    <input type="submit" value="Submit">
-  </form><br>
-</body></html>)=====";
+//const char index_html[] PROGMEM = R"=====(
+//<!DOCTYPE HTML><html><head>
+//  <title>ESP Input Form</title>
+//  <meta name="viewport" content="width=device-width, initial-scale=1">
+//  </head><body>
+//  <form action="/get">
+//    input1: <input  type="text" name="counter">
+//    <input type="submit" value="Submit">
+//  </form><br>
+//</body></html>)=====";
 
-const char* PARAM_INPUT_1 = "counter";
-const char* PARAM_INPUT_2 = "input2";
-
-//void notFound(AsyncWebServerRequest *request) {
-//  request->send(404, "text/plain", "Not found");
-//}
-
-const String postForms = "<html>\
+String postForms1 = "<html>\
   <head>\
-    <title>ESP8266 Web Server POST handling</title>\
-    <style>\
-      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
-    </style>\
+    <title>Machine Counter Link</title>\
   </head>\
   <body>\
-    <h1>POST plain text to /postplain/</h1><br>\
-    <form method=\"post\" enctype=\"text/plain\" action=\"/postplain/\">\
-      <input type=\"text\" name=\'{\"hello\": \"world\", \"trash\": \"\' value=\'\"}\'><br>\
-      <input type=\"submit\" value=\"Submit\">\
-    </form>\
-    <h1>POST form data to /postform/</h1><br>\
-    <form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/postform/\">\
-      <input type=\"text\" name=\"hello\" value=\"world\"><br>\
+    <h1>Machine Counter HTTP Link</h1><br>\
+    <form method=\"post\" action=\"/submit/\">\
+      <input style=\"width: 800px;\" type=\"text\" name=\'counter\' value=\'";
+
+
+String postForms2 = "\'><br>\
       <input type=\"submit\" value=\"Submit\">\
     </form>\
   </body>\
@@ -73,22 +60,22 @@ const String postForms = "<html>\
 void setup() {
   // Turn on Serial at 115200 bound speed
   Serial.begin(115200);
-  
+
   /*											*
-  *				WIFI Manganger 		
-  *												*/		
-  
-  // WiFi Manager 
+  				WIFI Manganger
+  *												*/
+
+  // WiFi Manager
   WiFiManager wifiManager;
   wifiManager.autoConnect();
-  
+
   // If you get here you have connected to the WiFi
   Serial.println("connected...yeey :)");
-  
-   /*											*
-  *				GPIO Initialize 		
-  *												*/		
-  
+
+  /*											*
+  				GPIO Initialize
+  *												*/
+
   // GPIO for Wemos D1 R2 SCK LED
   pinMode(LED_PIN, OUTPUT); //GPIO14 is an OUTPUT pin;
   digitalWrite(LED_PIN, LOW); //Initial state is ON
@@ -96,99 +83,134 @@ void setup() {
   // INPUT GPIO
   pinMode(INPUT_PIN, INPUT); //GPIO 0 is an INPUT pin;
   digitalWrite(INPUT_PIN, LOW); //Initial state is ON
-  
-  
-  
-  /*											*
-  *				EEPROM Initialize 		
-  *												*/		 
 
-  EEPROM.begin(512);  //Initialize EEPROM 
-  Serial.println("");
-  Serial.print(char(EEPROM.read(addr)));
-  addr++;                      //Increment address
-  Serial.print(char(EEPROM.read(addr)));
-  addr++;                      //Increment address
-  Serial.println(char(EEPROM.read(addr)));
- 
+  // WIFI MANAGER PIN
+  pinMode(WIFI_PIN, INPUT); //GPIO 0 is an INPUT pin;
+  digitalWrite(WIFI_PIN, LOW); //Initial state is ON
+
+
+  /*											*
+  				EEPROM Initialize
+  *												*/
+
+  EEPROM.begin(512);  //Initialize EEPROM
   //Read string from eeprom (testing eeprom)
-  String strText ;   
   strText.reserve(512);
-  for(int i=0;i<512;i++) 
-  {
-    strText = strText + char(EEPROM.read(i)); //Read one by one with starting address of 0x0F    
-  }  
- 
+  strText = read_String(0);
+  //  for(int i=0;i<512;i++)
+  //  {
+  //    strText = strText + char(EEPROM.read(i)); //Read one by one with starting address of 0x0F
+  //  }
   Serial.println(strText);  //Print the text
-  
-  
-//  /*											*
-//  *				Web Server on port 8888 		
-//  *												*/		
-server2.on("/", handleRoot); //Which routine to handle at root location
-server2.begin();
-//  
-//   // Send web page with input fields to client
-//  server2.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-//    request->send_P(200, "text/html", index_html);
-//  });
-//
-//  // Send a GET request to <ESP_IP>/get?input1=<inputMessage>
-//  server2.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
-//    String inputMessage;
-//    String inputParam;
-//    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
-//    if (request->hasParam(PARAM_INPUT_1)) {
-//      inputMessage = request->getParam(PARAM_INPUT_1)->value();
-//      inputParam = PARAM_INPUT_1;
-//    }
-//    // GET input2 value on <ESP_IP>/get?input2=<inputMessage>
-//    else if (request->hasParam(PARAM_INPUT_2)) {
-//      inputMessage = request->getParam(PARAM_INPUT_2)->value();
-//      inputParam = PARAM_INPUT_2;
-//    }
-//    else {
-//      inputMessage = "No message sent";
-//      inputParam = "none";
-//    }
-//    Serial.println(inputMessage);
-//    request->send(200, "text/html", "HTTP GET request sent to your ESP on input field (" 
-//                                     + inputParam + ") with value: " + inputMessage +
-//                                     "<br><a href=\"/\">Return to Home Page</a>");
-//  });
-//  server2.onNotFound(notFound);
-//  server2.begin(); // Start the HTTP Server
-//  
-  // Begin Server
-  //server.begin(); // Start the HTTP Server
+
+
+
+  //  /*											*
+  //  *				Web Server on port 8888
+  //  *												*/
+  //counterLink.reserve(500)
+  server2.on("/", handleRoot); //Which routine to handle at root location
+  server2.on("/submit/", handleSubmit);
+  server2.begin();
 
 }
 
 void handleRoot() {
-  //String s = MAIN_page;
-  server2.send(200, "text/html", index_html);
+  server2.send(200, "text/html", postForms1 + strText + postForms2);
 }
 
+void handleSubmit() {
+  Serial.println(server2.args());
+  if (server2.args() > 0 ) {
+    for ( uint8_t i = 0; i < server2.args(); i++ ) {
+      //Serial.println(server2.argName(i));
+      //Serial.println(server2.arg(i));
 
+      //if((server2.arg(i)).indexOf("counter=")==0){
+      //  Serial.println("found");
+      //}
+
+      if (server2.argName(i) == "counter") {
+        Serial.println("Writing " + server2.arg(i));
+        writeString(0, server2.arg(i));  //Address 10 and String type data
+        strText = server2.arg(i);
+        //do something here with value from server.arg(i);
+      }
+
+    }
+  }
+  server2.send(200, "text/html", postForms1 + strText + postForms2);
+}
+
+void writeString(char add, String data)
+{ //https://circuits4you.com/2018/10/16/arduino-reading-and-writing-string-to-eeprom/
+
+  int _size = data.length();
+  int i;
+  for (i = 0; i < _size; i++)
+  {
+    EEPROM.write(add + i, data[i]);
+  }
+  EEPROM.write(add + _size, '\0'); //Add termination null character for String Data
+  EEPROM.commit();
+}
+
+String read_String(char add)
+{ //https://circuits4you.com/2018/10/16/arduino-reading-and-writing-string-to-eeprom/
+  int i;
+  char data[500]; //Max 500 Bytes
+  int len = 0;
+  unsigned char k;
+  k = EEPROM.read(add);
+  //Serial.print(k);
+  while (k != '\0' && len < 500) //Read until null character
+  {
+    k = EEPROM.read(add + len);
+    //Serial.print(k);
+    data[len] = k;
+    len++;
+  }
+  data[len] = '\0';
+  return String(data);
+}
 
 void loop() {
 
-  server2.handleClient();          //Handle client requests
-  
-  //delay(1000);
-  //Serial.println("Looping");
-  inputValue = digitalRead(INPUT_PIN);
-//  if (inputValue == HIGH){
-//    Serial.println("Input detected");
-//    digitalWrite(LED_PIN, HIGH);
-//  }else if (digitalRead(LED_PIN) == HIGH){
-//    digitalWrite(LED_PIN, LOW);
-//  }
+  if ( digitalRead(WIFI_PIN) == HIGH ) {
+    //WiFiManager
+    //Local intialization. Once its business is done, there is no need to keep it around
+    WiFiManager wifiManager;
 
-  
-  // check to see if you just pressed the button
-  // (i.e. the input went from LOW to HIGH), and you've waited long enough
-  // since the last press to ignore any noise:
+    //reset settings - for testing
+    //wifiManager.resetSettings();
+
+    //sets timeout until configuration portal gets turned off
+    //useful to make it all retry or go to sleep
+    //in seconds
+    //wifiManager.setTimeout(120);
+
+    //it starts an access point with the specified name
+    //here  "AutoConnectAP"
+    //and goes into a blocking loop awaiting configuration
+
+    //WITHOUT THIS THE AP DOES NOT SEEM TO WORK PROPERLY WITH SDK 1.5 , update to at least 1.5.1
+    //WiFi.mode(WIFI_STA);
+
+    if (!wifiManager.startConfigPortal("OnDemandAP")) {
+      Serial.println("failed to connect and hit timeout");
+      delay(3000);
+      //reset and try again, or maybe put it to deep sleep
+      ESP.reset();
+      delay(5000);
+    }
+
+    //if you get here you have connected to the WiFi
+    Serial.println("connected...yeey :)");
+  }
+
+  server2.handleClient();          //Handle client requests
+
+  inputValue = digitalRead(INPUT_PIN);
 
   // If the switch changed, due to noise or pressing:
   if (inputValue != lastInputState) {
@@ -202,55 +224,48 @@ void loop() {
 
     // if the button state has changed:
     if (inputValue != inputState) {
-        inputState = inputValue;
-        
-        Serial.print("Input Changed to ");
-        Serial.println(inputState);
-        digitalWrite(LED_PIN, inputState);
+      inputState = inputValue;
+
+      Serial.print("Input Changed to ");
+      Serial.println(inputState);
+      digitalWrite(LED_PIN, inputState);
+
+      if (inputState == HIGH) {
+        WiFiClient client;
+
+        HTTPClient http;
+        http.setTimeout(2000);
+        Serial.print("[HTTP] begin...\n");
+        if (http.begin(client, strText)) {  // HTTP
+
+
+          Serial.print("[HTTP] GET...\n");
+          // start connection and send HTTP header
+          int httpCode = http.GET();
+
+          // httpCode will be negative on error
+          if (httpCode > 0) {
+            // HTTP header has been send and Server response header has been handled
+            Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+
+            // file found at server
+            if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+              String payload = http.getString();
+              Serial.println(payload);
+            }
+          } else {
+            Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+          }
+
+          http.end();
+        } else {
+          Serial.printf("[HTTP} Unable to connect\n");
+        }
+      }
+
     }
   }
 
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
   lastInputState = inputValue;
 
-  
-  // put your main code here, to run repeatedly:
-  // put your main code here, to run repeatedly:
-//  WiFiClient client = server.available();
-//  if (!client) {
-//    return;
-//  }
-//
-//  //Looking under the hood
-//  Serial.println("Somebody has connected :)");
-//
-//  //Read what the browser has sent into a String class and print the request to the monitor
-//  String request = client.readStringUntil('\r');
-//  //Looking under the hood
-//  Serial.println(request);
-//
-//  // Handle the Request
-//
-//  if (request.indexOf("/ON") != -1) {
-//    digitalWrite(LED_PIN, HIGH);
-//  }
-//  else if (request.indexOf("/OFF") != -1) {
-//    digitalWrite(LED_PIN, LOW);
-//  }
-//
-//  // Prepare the HTML document to respond and add buttons:
-//  String s = "HTTP/1.1 200 OK\r\n";
-//  s += "Content-Type: text/html\r\n\r\n";
-//  s += "<!DOCTYPE HTML>\r\n<html>\r\n";
-//  s += "<br><input type=\"button\" name=\"b1\" value=\"Turn LED ON\" onclick=\"location.href='/ON'\">";
-//  s += "<br><br><br>";
-//  s += "<input type=\"button\" name=\"bi\" value=\"Turn LED OFF\" onclick=\"location.href='/OFF'\">";
-//  s += "</html>\n";
-//  //Serve the HTML document to the browser.
-//  client.flush ();
-//  //clear previous info in the stream
-//  client.print (s); // Send the response to the client
-//  delay(1);
-//  Serial.println("Client disonnected" );
-//  //Looking under the hood)
 }
