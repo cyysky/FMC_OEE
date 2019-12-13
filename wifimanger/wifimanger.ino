@@ -1,3 +1,5 @@
+
+
 #include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library (you most likely already have this in your sketch)
 #include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
 #include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
@@ -8,12 +10,17 @@
 
 #include <EEPROM.h>
 
+
+
+
 //Web server
 ESP8266WebServer server2(888);
+
 
 // GPIO Pin
 int LED_PIN = 14;
 int INPUT_PIN = 16;
+int LED_PIN_ESP = 2;
 int WIFI_PIN = 15;
 
 // Input Status and debouncing
@@ -27,6 +34,11 @@ unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
 String strText ;
+
+boolean ledState;
+unsigned long ms;        //time from millis()
+unsigned long msLast;    //last time the LED changed state
+
 
 // HTML web page to handle 3 input fields (input1, input2, input3)
 //const char index_html[] PROGMEM = R"=====(
@@ -80,14 +92,17 @@ void setup() {
   pinMode(LED_PIN, OUTPUT); //GPIO14 is an OUTPUT pin;
   digitalWrite(LED_PIN, LOW); //Initial state is ON
 
+  //LED_PIN_ESP
+  pinMode(LED_PIN_ESP, OUTPUT); //GPIO14 is an OUTPUT pin;
+  digitalWrite(LED_PIN_ESP, HIGH); //Initial state is ON
+
   // INPUT GPIO
-  pinMode(INPUT_PIN, INPUT); //GPIO 0 is an INPUT pin;
-  digitalWrite(INPUT_PIN, LOW); //Initial state is ON
+  pinMode(INPUT_PIN,INPUT); //GPIO 0 is an INPUT pin;
+  //digitalWrite(INPUT_PIN, LOW); //Initial state is ON
 
   // WIFI MANAGER PIN
   pinMode(WIFI_PIN, INPUT); //GPIO 0 is an INPUT pin;
-  digitalWrite(WIFI_PIN, LOW); //Initial state is ON
-
+  //digitalWrite(WIFI_PIN, LOW); //Initial state is ON
 
   /*											*
   				EEPROM Initialize
@@ -174,8 +189,18 @@ String read_String(char add)
   return String(data);
 }
 
-void loop() {
+void blinkLED(void)
+{//https://forum.arduino.cc/index.php?topic=257095.0
+    if (ms - msLast > (ledState ? 700 : 700)) {
+        digitalWrite(LED_PIN_ESP, ledState = !ledState);
+        msLast = ms;
+    }
+}
 
+void loop() {
+  ms = millis();
+  blinkLED();
+  
   if ( digitalRead(WIFI_PIN) == HIGH ) {
     //WiFiManager
     //Local intialization. Once its business is done, there is no need to keep it around
