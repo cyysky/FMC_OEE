@@ -19,9 +19,9 @@ ESP8266WebServer server2(888);
 
 // GPIO Pin
 int LED_PIN = 14;
-int INPUT_PIN = 16;
+int INPUT_PIN = 15;
 int LED_PIN_ESP = 2;
-int WIFI_PIN = 15;
+int WIFI_PIN = 0;
 
 // Input Status and debouncing
 int inputValue = 0;
@@ -68,19 +68,62 @@ String postForms2 = "\'><br>\
   </body>\
 </html>";
 
+//char str[512];
+//WiFiManagerParameter custom_mqtt_server("server", "http server", str, 512);
+//flag for saving data
+bool shouldSaveConfig = false;
+//callback notifying us of the need to save config
+void saveConfigCallback () {
+  Serial.println("Should save config");
+  shouldSaveConfig = true;
+}
+
 
 void setup() {
   // Turn on Serial at 115200 bound speed
   Serial.begin(115200);
+  Serial.println("\n\n Machine Industry of Tool ver 1.0.0.0 \n");
+ /*                      *
+          EEPROM Initialize
+  *                       */
 
+  EEPROM.begin(512);  //Initialize EEPROM
+  //Read string from eeprom (testing eeprom)
+  strText.reserve(512);
+  strText = read_String(0);
+  //  for(int i=0;i<512;i++)
+  //  {
+  //    strText = strText + char(EEPROM.read(i)); //Read one by one with starting address of 0x0F
+  //  }
+  
+  Serial.println(strText.length());
+  Serial.println("Saved string is : ");
+  Serial.println(strText);  //Print the text
+  Serial.println("\n");
+  //strText.toCharArray(str, 100);
+  //strcpy(str,strText);
+  //Serial.println(str);
+  //Serial.println("\n");
+  
+  const char * c = strText.c_str();
+  Serial.println(c);
   /*											*
   				WIFI Manganger
   *												*/
 
   // WiFi Manager
   WiFiManager wifiManager;
+  WiFiManagerParameter custom_mqtt_server("server", "http server", c,100);
+  wifiManager.addParameter(&custom_mqtt_server);
+  wifiManager.setSaveConfigCallback(saveConfigCallback);
+  
   wifiManager.autoConnect();
-
+  if (shouldSaveConfig==true){
+      //read updated parameters
+      strText = custom_mqtt_server.getValue();
+      Serial.println("Writing " + strText);
+      writeString(0, strText);  //Address 10 and String type data
+  }
   // If you get here you have connected to the WiFi
   Serial.println("connected...yeey :)");
 
@@ -101,25 +144,10 @@ void setup() {
   //digitalWrite(INPUT_PIN, LOW); //Initial state is ON
 
   // WIFI MANAGER PIN
-  pinMode(WIFI_PIN, INPUT); //GPIO 0 is an INPUT pin;
+  pinMode(WIFI_PIN, INPUT_PULLUP); //GPIO 0 is an INPUT pin;
   //digitalWrite(WIFI_PIN, LOW); //Initial state is ON
 
-  /*											*
-  				EEPROM Initialize
-  *												*/
-
-  EEPROM.begin(512);  //Initialize EEPROM
-  //Read string from eeprom (testing eeprom)
-  strText.reserve(512);
-  strText = read_String(0);
-  //  for(int i=0;i<512;i++)
-  //  {
-  //    strText = strText + char(EEPROM.read(i)); //Read one by one with starting address of 0x0F
-  //  }
-  Serial.println(strText);  //Print the text
-
-
-
+ 
   //  /*											*
   //  *				Web Server on port 8888
   //  *												*/
@@ -201,10 +229,14 @@ void loop() {
   ms = millis();
   blinkLED();
   
-  if ( digitalRead(WIFI_PIN) == HIGH ) {
+  if ( digitalRead(WIFI_PIN) == LOW ) {
+    const char * c = strText.c_str();
     //WiFiManager
+    WiFiManagerParameter custom_mqtt_server("server", "http server", c, 512);
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
+
+    wifiManager.addParameter(&custom_mqtt_server);
 
     //reset settings - for testing
     //wifiManager.resetSettings();
@@ -221,14 +253,23 @@ void loop() {
     //WITHOUT THIS THE AP DOES NOT SEEM TO WORK PROPERLY WITH SDK 1.5 , update to at least 1.5.1
     //WiFi.mode(WIFI_STA);
 
+    //set config save notify callback
+    wifiManager.setSaveConfigCallback(saveConfigCallback);
+
     if (!wifiManager.startConfigPortal("OnDemandAP")) {
+    //if (!wifiManager.autoConnect("AutoConnectAP")) {
       Serial.println("failed to connect and hit timeout");
       delay(3000);
       //reset and try again, or maybe put it to deep sleep
       ESP.reset();
       delay(5000);
     }
-
+    if (shouldSaveConfig==true){
+      //read updated parameters
+      strText = custom_mqtt_server.getValue();
+      Serial.println("Writing " + strText);
+      writeString(0, strText);  //Address 10 and String type data
+    }
     //if you get here you have connected to the WiFi
     Serial.println("connected...yeey :)");
   }
