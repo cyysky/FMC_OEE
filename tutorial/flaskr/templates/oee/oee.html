@@ -28,11 +28,20 @@
 
 
   <form>
+   <label for="machineName">Machine</label>
   <select class="selectpicker form-control" data-live-search="true" name=colours >
   {% for color in colours %}
-	<option value= "{{color}}" SELECTED>{{color}}</option>
+	<option value= "{{color}}">{{color}}</option>
   {% endfor %}
   </select>
+  
+   <label for="machineName">Job</label>
+  <select class="selectpicker form-control" data-live-search="true" name=colours >
+  {% for color in colours %}
+	<option value= "{{color}}">{{color}}</option>
+  {% endfor %}
+  </select> 
+  
   </form>
 
 {% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Posts{% endblock %}</h1>
+  {% if g.user %}
+    <a class="action" href="{{ url_for('blog.create') }}">New</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% for post in posts %}
+    <article class="post">
+      <header>
+        <div>
+          <h1>{{ post['title'] }}</h1>
+          <div class="about">by {{ post['username'] }} on {{ post['created'].strftime('%Y-%m-%d') }}</div>
+        </div>
+        {% if g.user['id'] == post['author_id'] %}
+          <a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
+        {% endif %}
+      </header>
+      <p class="body">{{ post['body'] }}</p>
+    </article>
+    {% if not loop.last %}
+      <hr>
+    {% endif %}
+  {% endfor %}
+  
+<table border="1" cellpadding="5" cellspacing="5">
+{% for row in machines %}
+    <tr>
+    {% for d in row %}
+        <td>{{ d }}</td>
+    {% endfor %}
+	<td>{{g.user['id']}}</td>
+	{% if g.user['id'] >= 0 %}
+          <td><a class="action" href="">Edit</a></td>
+	{% endif %}
+    </tr>
+{% endfor %}
+</table>
+
+  <form>
+   <label for="machineName">Machine</label>
+  <select class="selectpicker form-control" data-live-search="true" name=colours >
+  {% for color in colours %}
+	<option value= "{{color}}">{{color}}</option>
+  {% endfor %}
+  </select>
+  
+   <label for="machineName">Job</label>
+  <select class="selectpicker form-control" data-live-search="true" name=colours >
+  {% for color in colours %}
+	<option value= "{{color}}">{{color}}</option>
+  {% endfor %}
+  </select> 
+  
+  </form>
+
+{% endblock %}

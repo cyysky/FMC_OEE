@@ -4,6 +4,7 @@ import click
 from flask import current_app
 from flask import g
 from flask.cli import with_appcontext
+from flask_mysqldb import MySQL
 
 
 def get_db():
@@ -18,6 +19,12 @@ def get_db():
         g.db.row_factory = sqlite3.Row
 
     return g.db
+    
+def get_mysql_db():
+    if "mydb" not in g:
+        g.mydb = MySQL(current_app)
+
+    return g.mydb
 
 
 def close_db(e=None):

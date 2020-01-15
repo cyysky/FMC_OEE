@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flask_mysqldb import MySQL
 
 
 def create_app(test_config=None):
@@ -12,6 +13,13 @@ def create_app(test_config=None):
         # store the database in the instance folder
         DATABASE=os.path.join(app.instance_path, "flaskr.sqlite"),
     )
+    
+    app.config['MYSQL_HOST'] = 'localhost'
+    app.config['MYSQL_USER'] = 'root'
+    app.config['MYSQL_PASSWORD'] = '123456'
+    app.config['MYSQL_DB'] = 'db'
+
+    mysql = MySQL(app)
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -36,11 +44,12 @@ def create_app(test_config=None):
     db.init_app(app)
 
     # apply the blueprints to the app
-    from flaskr import auth, blog, oee
+    from flaskr import auth, blog, oee, oee_setting
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(blog.bp)
     app.register_blueprint(oee.bp)
+    app.register_blueprint(oee_setting.bp)
 
     # make url_for('index') == url_for('blog.index')
     # in another app, you might define a separate main index here with
