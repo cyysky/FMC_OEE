@@ -48,42 +48,7 @@
 	Data count is {{ row|length }}:
 	
     {% for d in row %}
-        <td>{{ d }}</td>
-    {% endfor %}
-	<td>{{g.user['id']}}</td>
-	{% if g.user['id'] >= 0 %}
-          <td><a class="action" href="">Edit</a></td>
-	{% endif %}
-    </tr>
-{% endfor %}
-</table>
-
-
-<table id="employees" style="width:100%"><tbody><tr>
-        <th>machine_name</th>
-        <th>machine_key</th>
-    </tr>
-	{% if machines %}
-    
-    {% for row in machines %}
-	<tr>
-     <td> {{ row.machine_name }}</td>
-        <td> {{ row.machine_key }}</td>
-		</tr>
-    {% endfor %}
-	    
-    {% endif %}
-       
-</tbody></table>
-	
-<!-- Table headers -->
-<table border="1" cellpadding="5" cellspacing="5">
-{% for row in machines %}
-    <tr>
-	Data count is {{ row|length }}:
-	
-    {% for d in row %}
-        <td>{{ d }}</td>
+        <td>{{ row.machine_name }}</td>
     {% endfor %}
 	<td>{{g.user['id']}}</td>
 	{% if g.user['id'] >= 0 %}

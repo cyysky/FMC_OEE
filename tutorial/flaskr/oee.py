@@ -22,5 +22,6 @@ def index():
         " ORDER BY created DESC"
     ).fetchall()
     colours = ['Red', 'Blue', 'Black', 'Orange']
+    
     return render_template("oee/oee.html", posts=posts,colours=colours)
  #

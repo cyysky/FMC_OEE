@@ -8,7 +8,7 @@ def get_db_cursor():
       passwd="123456",
       database="db"
     )
-    mycursor = mydb.cursor()
+    mycursor = mydb.cursor(dictionary=True)
     
     return mydb,mycursor
 
@@ -54,6 +54,31 @@ def get_machines():
         myresult = mycursor.fetchall()
         
         return myresult
+       
+    except:
+        traceback.print_exc() 
+        close_db(mydb)      
+
+
+def get_machines2():
+
+    try:    
+        mydb,mycursor = get_db_cursor()     
+        
+        mycursor.execute("SELECT * FROM machine as m "
+        "left join job as j on j.id = m.active_job_id;")
+        
+        row_headers=[x[0] for x in mycursor.description] #this will extract row headers
+        
+        myresult = mycursor.fetchall()
+        
+        json_data=[]
+        for result in myresult:
+            json_data.append(dict(zip(row_headers,result)))        
+        result = json.dumps(json_data, indent=4, sort_keys=True, default=str)
+        return jsonify(result)
+        
+        #return myresult
        
     except:
         traceback.print_exc() 
