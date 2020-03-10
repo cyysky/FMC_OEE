@@ -19,9 +19,9 @@ ESP8266WebServer server2(888);
 
 // GPIO Pin
 int LED_PIN = 14;
-int INPUT_PIN = 15; //Wemos D1 (pin D8)
+int INPUT_PIN = 0; //Wemos D1 (pin D8)
 int LED_PIN_ESP = 2;
-int WIFI_PIN = 0;
+int WIFI_PIN = 13;
 
 // Input Status and debouncing
 int inputValue = 0;
@@ -132,19 +132,23 @@ void setup() {
   *												*/
 
   // GPIO for Wemos D1 R2 SCK LED
-  pinMode(LED_PIN, OUTPUT); //GPIO14 is an OUTPUT pin;
+  pinMode(LED_PIN, OUTPUT); //GPIO 14 is an OUTPUT pin;
   digitalWrite(LED_PIN, LOW); //Initial state is ON
 
   //LED_PIN_ESP
-  pinMode(LED_PIN_ESP, OUTPUT); //GPIO14 is an OUTPUT pin;
+  pinMode(LED_PIN_ESP, OUTPUT); //GPIO 2 is an OUTPUT pin;
   digitalWrite(LED_PIN_ESP, HIGH); //Initial state is ON
 
   // INPUT GPIO
-  pinMode(INPUT_PIN,INPUT); //GPIO 0 is an INPUT pin;
+  pinMode(INPUT_PIN,INPUT_PULLUP); //GPIO 0 is an INPUT pin;
   //digitalWrite(INPUT_PIN, LOW); //Initial state is ON
 
+  // INPUT GPIO REFERENCE
+  pinMode(15,OUTPUT); //GPIO 0 is an INPUT pin;
+  digitalWrite(15, LOW); //Initial state is ON
+
   // WIFI MANAGER PIN
-  pinMode(WIFI_PIN, INPUT_PULLUP); //GPIO 0 is an INPUT pin;
+  pinMode(WIFI_PIN, INPUT_PULLUP); //GPIO 12 is an INPUT pin;
   //digitalWrite(WIFI_PIN, LOW); //Initial state is ON
 
  
@@ -296,7 +300,7 @@ void loop() {
       Serial.println(inputState);
       digitalWrite(LED_PIN, inputState);
 
-      if (inputState == HIGH) {
+      if (inputState == LOW) {
         WiFiClient client;
 
         HTTPClient http;

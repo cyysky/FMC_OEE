@@ -69,6 +69,7 @@
 	<tr>
      <td> {{ row.machine_name }}</td>
         <td> {{ row.machine_key }}</td>
+		<td><a class="action" href="{{ url_for('oee_add_job.add_job', id=row.id) }}">Edit</a></td>
 		</tr>
     {% endfor %}
 	    

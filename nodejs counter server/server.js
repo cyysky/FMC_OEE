@@ -13,30 +13,46 @@ var pool      =    mysql.createPool({
     debug    :  false
 });
 
-
+var counter = 0
 
 function handle_database(req,res) {
     var q = url.parse(req.url, true).query;
     var txt = q.machine + " " + q.machineKey;
     
     var sql = 'insert into machine_counter (machine_name_id,time_trigged) select id,now(6) from machine where machine_name = ? and machine_key = ? limit 1;';
+	
     var sqlParams = [q.machine, q.machineKey];
     
-    
-       // connection will be acquired automatically
-       pool.query(sql,sqlParams,function(err,rows){
-        if(err) {
-            return res.json({'error': true, 'message': 'Error occurred'+err});
-        }
-           response = {
-              MachineName:q.machine,
-              MachineKey:req.query.machineKey,
-              UpdateSuccessful:rows.affectedRows
-           };
-           res.json(response);
-                //connection will be released as well.
-                //res.json(rows); 
-       });
+	var sql2 ='UPDATE `machine` SET `current_ip` = ? WHERE (`machine_name` = ? AND `machine_key`=?);'
+	//https://stackoverflow.com/questions/8107856/how-to-determine-a-users-ip-address-in-node
+	var sqlParams2 = [req.connection.remoteAddress,q.machine, q.machineKey];
+	counter = counter+1
+    console.log(txt+" "+counter)
+	
+	pool.query(sql2,sqlParams2,function(err,rows){
+	if(err) {
+		console.log(err)
+	}
+	
+	});
+	
+	// connection will be acquired automatically
+	pool.query(sql,sqlParams,function(err,rows){
+	if(err) {
+		console.log(err)
+		return res.json({'error': true, 'message': 'Error occurred'+err});
+	}
+	
+	response = {
+	  MachineName:q.machine,
+	  MachineKey:req.query.machineKey,
+	  UpdateSuccessful:rows.affectedRows
+	};
+	console.log(response)
+	res.json(response);
+	//connection will be released as well.
+	//res.json(rows); 
+	});
 }
 
 app.get("/",function(req,res){-

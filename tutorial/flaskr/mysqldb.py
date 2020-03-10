@@ -48,7 +48,7 @@ def get_machines():
     try:    
         mydb,mycursor = get_db_cursor()     
         
-        mycursor.execute("SELECT * FROM machine as m "
+        mycursor.execute("SELECT m.id, machine_name, machine_key, location, m.active, alive, active_job_id, job, mold_name, quantity, bag, material, cavity, date_time, user_id FROM machine as m "
         "left join job as j on j.id = m.active_job_id;")
         
         myresult = mycursor.fetchall()
@@ -59,6 +59,22 @@ def get_machines():
         traceback.print_exc() 
         close_db(mydb)      
 
+def get_jobs(active=True):
+
+    try:    
+        mydb,mycursor = get_db_cursor()     
+        
+        mycursor.execute("SELECT * FROM machine as m "
+        "left join job as j on j.id = m.active_job_id;")
+        
+        myresult = mycursor.fetchall()
+        
+        return myresult
+       
+    except:
+        traceback.print_exc() 
+        close_db(mydb)     
+         
 
 def get_machines2():
 
