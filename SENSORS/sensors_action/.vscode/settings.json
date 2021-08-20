@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "array": "cpp",
+        "compare": "cpp",
+        "functional": "cpp",
+        "ostream": "cpp",
+        "ranges": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "*.tcc": "cpp",
+        "sstream": "cpp",
+        "random": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
