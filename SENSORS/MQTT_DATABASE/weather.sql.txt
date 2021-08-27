@@ -1,0 +1,12 @@
+CREATE TABLE `weather` (
+  `idweather` int(11) NOT NULL AUTO_INCREMENT,
+  `weather_time` timestamp NULL DEFAULT current_timestamp(),
+  `temperature_1` float DEFAULT NULL,
+  `temperature_2` float DEFAULT NULL,
+  `humidity` float DEFAULT NULL,
+  `heat_index` float DEFAULT NULL,
+  `altitude` float DEFAULT NULL,
+  `pressure` double DEFAULT NULL,
+  PRIMARY KEY (`idweather`),
+  UNIQUE KEY `unique_time` (`weather_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4

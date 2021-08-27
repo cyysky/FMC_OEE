@@ -1,0 +1,6 @@
+CREATE TABLE `Temp_Q1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `temp` double DEFAULT NULL,
+  `time` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=217042 DEFAULT CHARSET=utf8mb4
