@@ -1,0 +1,17 @@
+WeMos D1 R2
+Pin D3 short to GND then Input Counter +1
+Pin D7 short to GND wifi setup page.
+
+Counter Link
+http://localhost:3001/?machine=m01&machineKey=12345
+
+nodejs counter server
+StartPackage.bat
+
+
+
+Additional Information
+database schema for mysql 
+schema:db
+username:root
+password:123456

@@ -6,7 +6,8 @@ CREATE TABLE `machine` (
   `active` tinyint(4) DEFAULT NULL,
   `alive` tinyint(4) DEFAULT NULL,
   `active_job_id` int(11) DEFAULT NULL,
+  `current_ip` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `machine_name_UNIQUE` (`machine_name`),
   UNIQUE KEY `machine_key_UNIQUE` (`machine_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=latin1
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1

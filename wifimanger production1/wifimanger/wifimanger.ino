@@ -1,4 +1,4 @@
-
+//http://ip:3001/?machine=m01&machineKey=12345
 
 #include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library (you most likely already have this in your sketch)
 #include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
@@ -18,10 +18,10 @@ ESP8266WebServer server2(888);
 
 
 // GPIO Pin
-int LED_PIN = 14;
-int INPUT_PIN = 0; //Wemos D1 (pin D8)
-int LED_PIN_ESP = 2;
-int WIFI_PIN = 13;
+int LED_PIN = 14; //D5 SCK
+int INPUT_PIN = 0; //Wemos D1 (pin D3)
+int LED_PIN_ESP = 2; //D4 BUILD IN LED
+int WIFI_PIN = 13; //D7
 
 // Input Status and debouncing
 int inputValue = 0;
